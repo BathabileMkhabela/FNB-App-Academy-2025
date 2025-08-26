@@ -1,0 +1,108 @@
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Contact Manager</title>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body onload="fetchContacts()">
+        <header>
+            <h1>Contact Manager</h1>
+            <p class="subtitle">Manage your contacts easily</p>
+        </header>
+        
+        <div class="buttons-container">
+            <button id="refresh" type="button">
+                <span id="refresh-text">Refresh</span>
+                <span id="refresh-loader" class="loading" style="display: none;"></span>
+            </button>
+            <button id="addContact" type="button">Add Contact</button>
+        </div>
+        
+        <div id="table">
+            <div class="loading"></div> Loading contacts...
+        </div>
+        
+        <script src="config.js"></script>
+
+        <script>
+            // Adding the event listener to the refresh button
+            document.getElementById("refresh").addEventListener('click', function() {
+                // Show loading animation
+                document.getElementById("refresh-text").style.display = 'none';
+                document.getElementById("refresh-loader").style.display = 'inline-block';
+                fetchContacts();
+            });
+            
+            // Adding the event listener to the addContact button
+            document.getElementById("addContact").addEventListener('click', addContact);
+            
+            // Function to fetch contacts from the API
+            function fetchContacts(){
+                // Make a GET request to the get-contacts endpoint
+                fetch(rootPath + "controller/get-contacts/")
+                .then(function(response) {
+                    return response.json(); // Parse the JSON response
+                })
+                .then(function(data){
+                    console.log(data);
+                    // Display the contacts in the table
+                    displayOutPuts(data);
+                    
+                    // Hide loading animation
+                    document.getElementById("refresh-text").style.display = 'inline-block';
+                    document.getElementById("refresh-loader").style.display = 'none';
+                })
+                .catch(function(error) {
+                    console.error('Error:', error);
+                    document.getElementById("table").innerHTML = 
+                        '<div class="error">Failed to load contacts. Please try again.</div>';
+                    
+                    // Hide loading animation
+                    document.getElementById("refresh-text").style.display = 'inline-block';
+                    document.getElementById("refresh-loader").style.display = 'none';
+                });
+            }
+
+            function displayOutPuts(data) {
+                if (data.length === 0) {
+                    document.getElementById("table").innerHTML = 
+                        '<div class="empty-state">No contacts found. Click "Add Contact" to create one.</div>';
+                    return;
+                }
+                
+                var output = "<table>";
+                for(a in data) {
+                    output += `
+                        <tr onclick="editContact(${data[a].id})" style="cursor: pointer;">
+                            <td><img src="${rootPath}controller/uploads/${data[a].avatar}" 
+                                 class="avatar-img" alt="${data[a].firstname}'s avatar"/></td>
+                            <td><h5>${data[a].firstname}</h5></td>
+                            <td><h5>${data[a].lastname}</h5></td>
+                        </tr>
+                    `;
+                }
+                output += "</table>";
+                document.getElementById("table").innerHTML = output;
+            }
+            
+            // Function to add a new contact
+            function addContact() {
+                // Add button press animation
+                const btn = document.getElementById("addContact");
+                btn.style.transform = "scale(0.95)";
+                setTimeout(() => {
+                    btn.style.transform = "";
+                    // Redirect to the add-contact.html page
+                    window.open("add-contact.html", "_self");
+                }, 200);
+            }
+
+            // Function to edit a contact
+            function editContact(id){
+                // Redirect to the edit-contact.html page with the contact ID
+                window.open("edit-contact.html?id=" + id, "_self");
+            }
+        </script>
+    </body>
+</html>

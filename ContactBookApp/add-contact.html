@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add New Contact</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Add New Contact</h1>
+        <p class="subtitle">Fill in the details to create a new contact</p>
+    </header>
+
+    <div class="form-container">
+        <div id="successMessage" class="success-message">
+            <i class="fas fa-check-circle"></i> Contact added successfully!
+        </div>
+        
+        <form id="editForm">
+            <div>
+                <label for="firstname">First Name</label>
+                <input type="text" id="firstname" name="firstname" required placeholder="Enter first name">
+            </div>
+            
+            <div>
+                <label for="lastname">Last Name</label>
+                <input type="text" id="lastname" name="lastname" required placeholder="Enter last name">
+            </div>
+            
+            <div>
+                <label for="mobile">Mobile Number</label>
+                <input type="tel" id="mobile" name="mobile" placeholder="Enter mobile number">
+            </div>
+            
+            <div>
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" placeholder="Enter email address">
+            </div>
+            
+            <div>
+                <label>Profile Picture</label>
+                <div class="file-input-container">
+                    <label class="file-input-label" id="fileInputLabel">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <span id="fileLabelText">Choose a file...</span>
+                    </label>
+                    <input type="file" id="avater" name="avater" accept="image/*">
+                    <div id="fileName" class="file-name"></div>
+                </div>
+            </div>
+            
+            <div>
+                <button type="submit" id="submitForm">
+                    <span id="submitText">Add Contact</span>
+                    <span id="submitLoader" class="loading" style="display: none;"></span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <button id="homeLink" type="button">
+        <i class="fas fa-arrow-left"></i> Back to Contacts
+    </button>
+
+    <script src="config.js"></script>
+
+    <script>
+        document.getElementById("editForm").addEventListener('submit', submitForm);
+        document.getElementById("homeLink").addEventListener('click', homeLink);
+        document.getElementById("avater").addEventListener('change', handleFileSelect);
+
+        function handleFileSelect(event) {
+            const fileInput = event.target;
+            const fileNameElement = document.getElementById('fileName');
+            const fileLabelText = document.getElementById('fileLabelText');
+            
+            if (fileInput.files.length > 0) {
+                const fileName = fileInput.files[0].name;
+                fileLabelText.textContent = fileName;
+                fileNameElement.textContent = `Selected: ${fileName}`;
+                
+                // Preview image if needed
+                if (fileInput.files[0].type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        // You could show a preview here if you want
+                    };
+                    reader.readAsDataURL(fileInput.files[0]);
+                }
+            } else {
+                fileLabelText.textContent = 'Choose a file...';
+                fileNameElement.textContent = '';
+            }
+        }
+
+        function submitForm(e) {
+            e.preventDefault();
+            
+            // Show loading state
+            document.getElementById('submitText').style.display = 'none';
+            document.getElementById('submitLoader').style.display = 'inline-block';
+            document.getElementById('submitForm').classList.add('form-loading');
+            
+            const form = new FormData(document.getElementById('editForm'));
+            form.append('apiKey', apiKey);
+
+            fetch(rootPath + "controller/insert-contact/", {
+                method: 'POST',
+                headers: {'Accept': 'application/json *.*'},
+                body: form
+            })
+            .then(function(response) {
+                return response.text(); 
+            })
+            .then(function(data) {
+                if (data == "1") {
+                    // Show success message
+                    document.getElementById('successMessage').style.display = 'block';
+                    
+                    // Reset form after delay
+                    setTimeout(() => {
+                        document.getElementById('editForm').reset();
+                        document.getElementById('fileLabelText').textContent = 'Choose a file...';
+                        document.getElementById('fileName').textContent = '';
+                        document.getElementById('successMessage').style.display = 'none';
+                    }, 2000);
+                } else {
+                    alert("Error adding contact: " + data);
+                }
+            })
+            .catch(function(error) {
+                alert("An error occurred: " + error.message);
+            })
+            .finally(function() {
+                // Reset loading state
+                document.getElementById('submitText').style.display = 'inline-block';
+                document.getElementById('submitLoader').style.display = 'none';
+                document.getElementById('submitForm').classList.remove('form-loading');
+            });
+        }
+
+        function homeLink() {
+            // Add button press animation
+            const btn = document.getElementById("homeLink");
+            btn.style.transform = "scale(0.95)";
+            setTimeout(() => {
+                btn.style.transform = "";
+                window.open("index.html", "_self");
+            }, 200);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Learning JS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+        <h1 id="heading1"></h1>
+        <p id="paragraph1"></p>
+        <h2>DO SOME CALCULATIONS:</h2>
+        <p id="result"></p>
+
+        <script>
+            var text1;
+            var text2;
+            var text3;
+
+            var num1=10;
+            var num2=20;
+
+            text1 = "Welcome to JavaScript Learning!";
+            text2="This is a simple example of using JavaScript to manipulate the DOM.";
+            text3=" You can change the content of HTML elements dynamically using JavaScript.";
+
+            document.getElementById("heading1").innerHTML= (text1);
+            document.getElementById("paragraph1").innerHTML = (text2 + text3);
+            document.getElementById("result").innerHTML =(num1 + " X " + num2 + "=" + (num1+num2));
+        </script>
+</body>
+</html>

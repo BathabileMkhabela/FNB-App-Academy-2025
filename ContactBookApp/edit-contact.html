@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Contact</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body onload="getContacts()">
+    <header>
+        <h1>Contact Details</h1>
+        <p class="subtitle">View and manage contact information</p>
+    </header>
+
+    <div class="edit-contact-container">
+        <div id="avatarImage"></div>
+        
+        <form id="editForm">
+            <div>
+                <label for="firstname">First Name</label>
+                <input type="text" id="firstname" name="firstname" readonly>
+            </div>
+            
+            <div>
+                <label for="lastname">Last Name</label>
+                <input type="text" id="lastname" name="lastname" readonly>
+            </div>
+            
+            <div>
+                <label for="mobile">Mobile Number</label>
+                <input type="tel" id="mobile" name="mobile" readonly>
+            </div>
+            
+            <div>
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" readonly>
+            </div>
+            
+            <div id="avatarUpload" style="display: none;">
+                <label>Change Profile Image</label>
+                <label for="avatar" class="change-avatar-btn">
+                    <i class="fas fa-camera"></i> Select New Image
+                </label>
+                <input type="file" id="avatar" name="avatar" accept="image/*" hidden>
+                <div id="fileName" class="file-name"></div>
+            </div>
+            
+            <button type="submit" id="submitForm" style="display: none;">
+                <span id="submitText">Update Contact</span>
+                <span id="submitLoader" class="loading" style="display: none;"></span>
+            </button>
+        </form>
+        
+        <div class="contact-actions">
+            <button id="homeLink" type="button">
+                <i class="fas fa-arrow-left"></i> Back
+            </button>
+            <button id="editContact" type="button">
+                <i class="fas fa-edit"></i> Edit
+            </button>
+            <button id="deleteContact" type="button">
+                <i class="fas fa-trash-alt"></i> Delete
+            </button>
+        </div>
+    </div>
+
+    <div id="confirmDeleteModal" class="confirm-delete" style="display: none;">
+        <div class="confirm-delete-content">
+            <h3>Confirm Deletion</h3>
+            <p>Are you sure you want to delete this contact? This action cannot be undone.</p>
+            <div class="confirm-delete-buttons">
+                <button id="confirmDeleteBtn" class="danger-btn">
+                    <i class="fas fa-trash-alt"></i> Delete
+                </button>
+                <button id="cancelDeleteBtn">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+
+    <script>
+        var id = getId();
+        var currentAvatar = '';
+
+        document.getElementById("homeLink").addEventListener('click', homeLink);
+        document.getElementById("editContact").addEventListener('click', editContacts);
+        document.getElementById("submitForm").addEventListener('click', submitContacts);
+        document.getElementById("deleteContact").addEventListener('click', showDeleteConfirm);
+        document.getElementById("confirmDeleteBtn").addEventListener('click', deleteContact);
+        document.getElementById("cancelDeleteBtn").addEventListener('click', hideDeleteConfirm);
+        document.getElementById("avatar").addEventListener('change', handleFileSelect);
+
+        function getId(){
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('id');
+        }
+
+        function getContacts(){
+            // Show loading state
+            document.getElementById("avatarImage").innerHTML = '<div class="loading"></div>';
+            
+            fetch(rootPath + "controller/get-contacts/?id=" + id)
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                displayOutPuts(data);
+            })
+            .catch(function(error) {
+                console.error('Error:', error);
+                document.getElementById("avatarImage").innerHTML = 
+                    '<div class="error">Failed to load contact details.</div>';
+            });
+        }
+
+        function homeLink(){
+            // Add button press animation
+            const btn = document.getElementById("homeLink");
+            btn.style.transform = "scale(0.95)";
+            setTimeout(() => {
+                btn.style.transform = "";
+                window.open("index.html", "_self");
+            }, 200);
+        }
+
+        function displayOutPuts(data){
+            currentAvatar = data[0].avatar;
+            const avatarHtml = `
+                <img src="${rootPath}controller/uploads/${data[0].avatar}" 
+                     alt="${data[0].firstname}'s profile picture" />
+            `;
+            document.getElementById("avatarImage").innerHTML = avatarHtml;
+            document.getElementById("firstname").value = data[0].firstname;
+            document.getElementById("lastname").value = data[0].lastname;
+            document.getElementById("mobile").value = data[0].mobile;
+            document.getElementById("email").value = data[0].email;
+        }
+
+        function editContacts(){
+            // Enable form fields
+            document.getElementById("firstname").readOnly = false;
+            document.getElementById("lastname").readOnly = false;
+            document.getElementById("mobile").readOnly = false;
+            document.getElementById("email").readOnly = false;
+            
+            // Show file upload and submit button
+            document.getElementById("avatarUpload").style.display = "block";
+            document.getElementById("submitForm").style.display = "block";
+            
+            // Hide edit button
+            document.getElementById("editContact").style.display = "none";
+            
+            // Add animation to show fields are editable
+            const inputs = document.querySelectorAll('input:not([type="file"])');
+            inputs.forEach(input => {
+                input.style.animation = "inputFocus 0.3s ease-out";
+                setTimeout(() => {
+                    input.style.animation = "";
+                }, 300);
+            });
+        }
+
+        function handleFileSelect(event) {
+            const fileInput = event.target;
+            const fileNameElement = document.getElementById('fileName');
+            
+            if (fileInput.files.length > 0) {
+                const fileName = fileInput.files[0].name;
+                fileNameElement.textContent = `Selected: ${fileName}`;
+                
+                // Preview the new image
+                if (fileInput.files[0].type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        document.getElementById("avatarImage").innerHTML = 
+                            `<img src="${e.target.result}" width="150" height="150" style="border-radius:50%;object-fit:cover;border:3px solid var(--primary-color)" />`;
+                    };
+                    reader.readAsDataURL(fileInput.files[0]);
+                }
+            } else {
+                fileNameElement.textContent = '';
+                // Revert to original avatar
+                document.getElementById("avatarImage").innerHTML = 
+                    `<img src="${rootPath}controller/uploads/${currentAvatar}" width="150" height="150" style="border-radius:50%;object-fit:cover;border:3px solid var(--primary-color)" />`;
+            }
+        }
+
+        function submitContacts(e){
+            e.preventDefault();
+            
+            // Show loading state
+            document.getElementById('submitText').style.display = 'none';
+            document.getElementById('submitLoader').style.display = 'inline-block';
+            document.getElementById('submitForm').classList.add('form-loading');
+            
+            const form = new FormData(document.getElementById('editForm'));
+            form.append('apiKey', apiKey);
+            form.append('id', id);
+
+            fetch(rootPath + "controller/update-contact/", {
+                method: 'POST',
+                headers: {'Accept': 'application/json *.*'},
+                body: form
+            })
+            .then(function(response) {
+                return response.text();
+            })
+            .then(function(data) {
+                if (data == "1") {
+                    showSuccessMessage("Contact updated successfully!");
+                    setTimeout(() => {
+                        homeLink();
+                    }, 1500);
+                } else {
+                    alert("Error updating contact: " + data);
+                }
+            })
+            .catch(function(error) {
+                alert("An error occurred: " + error.message);
+            })
+            .finally(function() {
+                // Reset loading state
+                document.getElementById('submitText').style.display = 'inline-block';
+                document.getElementById('submitLoader').style.display = 'none';
+                document.getElementById('submitForm').classList.remove('form-loading');
+            });
+        }
+
+        function showDeleteConfirm() {
+            document.getElementById("confirmDeleteModal").style.display = "flex";
+        }
+
+        function hideDeleteConfirm() {
+            document.getElementById("confirmDeleteModal").style.display = "none";
+        }
+
+        function deleteContact() {
+            // Show loading state on delete button
+            const deleteBtn = document.getElementById("confirmDeleteBtn");
+            deleteBtn.innerHTML = '<div class="loading small"></div> Deleting...';
+            deleteBtn.disabled = true;
+            
+            fetch(rootPath + "controller/delete-contact/?id=" + id + "&apiKey=" + apiKey)
+            .then(function(response) {
+                return response.text();
+            })
+            .then(function(data) {
+                if (data == "1") {
+                    showSuccessMessage("Contact deleted successfully!");
+                    setTimeout(() => {
+                        homeLink();
+                    }, 1500);
+                } else {
+                    alert("Error deleting contact: " + data);
+                }
+            })
+            .catch(function(error) {
+                alert("An error occurred: " + error.message);
+            })
+            .finally(function() {
+                hideDeleteConfirm();
+            });
+        }
+
+        function showSuccessMessage(message) {
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success-message';
+            successDiv.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+            document.querySelector('.edit-contact-container').prepend(successDiv);
+            
+            setTimeout(() => {
+                successDiv.style.opacity = '0';
+                setTimeout(() => {
+                    successDiv.remove();
+                }, 300);
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
